@@ -31,6 +31,7 @@ const GmApp = lazy(() => import('./glassmorphism/GmApp').then((module) => ({ def
 const EmeraldApp = lazy(() => import('./emerald/EmeraldApp').then((module) => ({ default: module.default })))
 const MiniApp = lazy(() => import('./mini/MiniApp'))
 const LuminaPlusApp = lazy(() => import('./luminaplus/LuminaPlusApp'))
+const NezhaApp = lazy(() => import('./nezha/NezhaApp'))
 const MiniServerDetail = lazy(() => import('./mini/MiniServerDetail'))
 
 function RegionSelect({ regions, value, onChange }: { regions: string[]; value: string; onChange: (value: string) => void }) {
@@ -1498,6 +1499,14 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
     return (
       <Suspense fallback={<main className="center">正在加载 LuminaPlus 主题…</main>}>
         <LuminaPlusApp data={data} error={error} onThemeChange={(name) => { setTheme(name); setThemeState(name); setActiveTheme(name ?? getActiveTheme()) }} />
+        {detailIndex !== null && servers[detailIndex] && <MiniServerDetail key={detailIndex} server={servers[detailIndex]} index={detailIndex} onClose={closeDetail} showHealthScore={data.show_health_score === true} />}
+      </Suspense>
+    )
+  }
+  if (activeTheme === 'nezha') {
+    return (
+      <Suspense fallback={<main className="center">正在加载哪吒主题…</main>}>
+        <NezhaApp data={data} error={error} onThemeChange={(name) => { setTheme(name); setThemeState(name); setActiveTheme(name ?? getActiveTheme()) }} />
         {detailIndex !== null && servers[detailIndex] && <MiniServerDetail key={detailIndex} server={servers[detailIndex]} index={detailIndex} onClose={closeDetail} showHealthScore={data.show_health_score === true} />}
       </Suspense>
     )

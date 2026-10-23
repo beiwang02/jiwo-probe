@@ -12,6 +12,8 @@ export { isBuiltinTheme, parseThemeName } from './theme-name'
 const APPEARANCE_CACHE = 'mmwx-probe-appearance'
 const DARK_OVERRIDE = 'mmwx-probe-dark-override'
 const THEME_OVERRIDE = 'mmwx-probe-theme-override'
+/** 哪吒主题访客的明暗选择：light / dark；不存在表示跟随系统 */
+export const NEZHA_MODE_KEY = 'jiwo-nezha-mode'
 let runtimeBackground: ProbeBackgroundAppearance | undefined
 let runtimePingGroups = DEFAULT_PING_GROUP_CONFIG
 let runtimeNetworkSpeedUnit = DEFAULT_NETWORK_SPEED_UNIT
@@ -230,6 +232,12 @@ export function applyAppearance(input?: ProbeAppearance) {
     dark = look.mode === 'dark'
     paper = look.palette === 'paper'
     mint = look.palette === 'mint'
+  } else if (theme === 'nezha') {
+    // 哪吒主题：访客手动选的明暗（jiwo-nezha-mode）优先；主控写 nezha-light / nezha-dark 固定明暗；都没有时跟随系统
+    const saved = (() => { try { return localStorage.getItem(NEZHA_MODE_KEY) } catch { return null } })()
+    if (saved === 'light' || saved === 'dark') dark = saved === 'dark'
+    else if (parsed.light !== undefined) dark = !parsed.light
+    else dark = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
   } else if (theme === 'premium') {
     const premiumMode = localStorage.getItem('premium-probe-color-mode')
     if (premiumMode === 'platinum') {
@@ -322,6 +330,24 @@ export function followControllerLuminaPlusAppearance() {
   localStorage.removeItem(LUMINAPLUS_MODE_KEY)
   localStorage.setItem(LUMINAPLUS_COLOR_KEY, 'auto')
   applyAppearance()
+}
+
+/** 哪吒主题：访客选浅色 / 深色，传 null 表示跟随系统 */
+export function setNezhaMode(mode: 'light' | 'dark' | null) {
+  try {
+    if (mode) localStorage.setItem(NEZHA_MODE_KEY, mode)
+    else localStorage.removeItem(NEZHA_MODE_KEY)
+  } catch { /* 隐私模式下只在本页生效 */ }
+  applyAppearance()
+}
+
+export function getNezhaMode(): 'light' | 'dark' | null {
+  try {
+    const saved = localStorage.getItem(NEZHA_MODE_KEY)
+    return saved === 'light' || saved === 'dark' ? saved : null
+  } catch {
+    return null
+  }
 }
 
 export function setDarkOverride(mode: 'dark' | 'light' | 'gold' | 'platinum' | null) {

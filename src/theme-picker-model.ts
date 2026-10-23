@@ -13,6 +13,7 @@ export const THEME_OPTIONS: { value: ThemeName | null; label: string; color: str
   { value: 'glassmorphism', label: 'Glassmorphism', color: '#62ad9a' },
   { value: 'emerald', label: 'Emerald', color: '#46ad83' },
   { value: 'lite', label: 'Lite', color: '#9489cc' },
+  { value: 'nezha', label: '哪吒', color: '#3b82f6' },
 ]
 
 export function pickerPosition(rect: { top: number; bottom: number; right: number }, viewport: { width: number; height: number }, height = 328) {

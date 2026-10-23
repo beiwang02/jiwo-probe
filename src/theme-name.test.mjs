@@ -4,7 +4,7 @@ import { canonicalThemeOverride, isBuiltinTheme, parseThemeName } from './theme-
 
 const themeNames = [
   'pixel', 'flat', 'anime', 'glass', 'lumina', 'luminaplus', 'premium',
-  'ran', 'glassmorphism', 'emerald', 'lite',
+  'ran', 'glassmorphism', 'emerald', 'lite', 'nezha',
   'ran-night', 'ran-mist', 'ran-ember', 'ran-sakura', 'ran-lavender',
   'ran-tomcat', 'ran-teal', 'ran-midnight', 'ran-mint', 'ran-butter', 'ran-ji',
 ]
@@ -24,7 +24,7 @@ test('all built-in themes and Ran variants ignore case in controller names and s
 test('all existing color suffixes and legacy aliases ignore case without losing their modes', () => {
   for (const name of ['lumina-gold', 'lumina-platinum', 'premium-platinum', 'premium-light',
     'luminaplus-light', 'luminaplus-dark', 'glassmorphism-light', 'glassmorphism-dark',
-    'lite-light', 'lite-dark', 'mini-light', 'mini-dark']) {
+    'lite-light', 'lite-dark', 'mini-light', 'mini-dark', 'nezha-light', 'nezha-dark']) {
     const expected = parseThemeName(name)
     for (const input of [name.toUpperCase(), mixedCase(name), ` ${name.toUpperCase().replaceAll('-', '_')} `]) {
       assert.deepEqual(parseThemeName(input), expected, input)
@@ -94,4 +94,11 @@ test('other themes and custom theme names remain unchanged', () => {
   assert.equal(parseThemeName('glassmorphism-dark').light, false)
   assert.equal(parseThemeName('My-Custom').theme, 'My-Custom')
   assert.equal(canonicalThemeOverride('lumina'), 'lumina')
+})
+
+test('nezha 及 -light / -dark：不带后缀跟随系统，后缀固定明暗', () => {
+  assert.deepEqual(parseThemeName('nezha'), { theme: 'nezha', gold: false, platinum: false })
+  assert.deepEqual(parseThemeName('Nezha-Light'), { theme: 'nezha', gold: false, platinum: false, light: true })
+  assert.deepEqual(parseThemeName('NEZHA_DARK'), { theme: 'nezha', gold: false, platinum: false, light: false })
+  assert.equal(isBuiltinTheme('Nezha'), true)
 })

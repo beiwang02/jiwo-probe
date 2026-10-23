@@ -17,6 +17,7 @@ body.gm-light-body .probe-forward { --ph-accent: #0d946e; }
 :root:is(.dark, .gold) :is(.probe-conn-history, .probe-history-dialog, .probe-forward) { --ph-tcp: #63cdb1; --ph-udp: #82b3f1; }
 :root.theme-luminaplus :is(.probe-conn-history, .probe-history-dialog, .probe-forward) { --ph-bg: var(--lp-surface); --ph-text: var(--lp-text); --ph-muted: var(--lp-muted); --ph-line: var(--lp-border); --ph-tcp: var(--lp-green); --ph-udp: var(--lp-blue); }
 :root.theme-lite :is(.probe-conn-history, .probe-history-dialog, .probe-forward) { --ph-bg: var(--mini-surface); --ph-text: var(--mini-text); --ph-muted: var(--mini-muted); --ph-line: var(--mini-border); --ph-tcp: var(--mini-green); --ph-udp: var(--mini-blue); }
+:root.theme-nezha :is(.probe-conn-history, .probe-history-dialog, .probe-forward) { --ph-bg: var(--nz-card); --ph-text: var(--nz-fg); --ph-muted: var(--nz-muted-fg); --ph-line: var(--nz-border); --ph-accent: var(--nz-blue); }
 :root.theme-emerald :is(.probe-conn-history, .probe-history-dialog, .probe-forward) { --ph-bg: var(--em-surface-solid); --ph-text: var(--em-text); --ph-muted: var(--em-text-2); --ph-line: var(--em-border); }
 body.gm-body :is(.probe-conn-history, .probe-history-dialog, .probe-forward) { --ph-bg: #171e2a; --ph-text: #f1f5f9; --ph-muted: #b0bbcd; --ph-line: #354255; --ph-tcp: #63cdb1; --ph-udp: #82b3f1; }
 body.gm-light-body :is(.probe-conn-history, .probe-history-dialog, .probe-forward) { --ph-bg: #f8fafc; --ph-text: #172033; --ph-muted: #526078; --ph-line: #dce1e8; --ph-tcp: #169b78; --ph-udp: #4385d5; }

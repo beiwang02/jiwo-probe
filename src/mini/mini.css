@@ -172,22 +172,22 @@
 .mini-empty button { background: var(--mini-surface); color: var(--mini-accent); border: 1px solid var(--mini-border); border-radius: 8px; padding: 7px 12px; }
 .mini-app .mini-footer { display: flex; justify-content: center; gap: 6px; margin-top: 30px; padding: 15px 0; color: var(--mini-muted); font-size: 11px; }
 .mini-footer > span { margin-left: 8px; border-left: 1px solid var(--mini-border); padding-left: 12px; }
-:root.theme-lite .server-detail { color: var(--mini-text); background: var(--mini-page); }
-:root.theme-lite :is(.probe-unlock-dialog, .probe-unlock-panel, .probe-unlock-button) { --cap-bg: var(--mini-surface); --cap-fg: var(--mini-text); --cap-muted: var(--mini-muted); }
+:root:is(.theme-lite, .theme-nezha) .server-detail { color: var(--mini-text); background: var(--mini-page); }
+:root:is(.theme-lite, .theme-nezha) :is(.probe-unlock-dialog, .probe-unlock-panel, .probe-unlock-button) { --cap-bg: var(--mini-surface); --cap-fg: var(--mini-text); --cap-muted: var(--mini-muted); }
 /* 独立趋势 / 解锁弹窗保持原有可视区高度。 */
-:root.theme-lite { --mini-dialog-height: min(820px, calc(100dvh - 32px)); }
-:root.theme-lite .server-detail-backdrop { padding: 16px; align-items: center; overflow: hidden; backdrop-filter: none; }
-:root.theme-lite .server-detail,
-:root.theme-lite .probe-unlock-dialog[open] { height: var(--mini-dialog-height); max-height: var(--mini-dialog-height); display: flex; flex-direction: column; overflow: hidden; }
-:root.theme-lite .server-detail-header,
-:root.theme-lite .probe-unlock-dialog-head { flex-shrink: 0; }
-:root.theme-lite .server-detail-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-:root.theme-lite .probe-unlock-dialog > .probe-unlock-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-:root.theme-lite .probe-unlock-dialog::backdrop { backdrop-filter: none; }
+:root:is(.theme-lite, .theme-nezha) { --mini-dialog-height: min(820px, calc(100dvh - 32px)); }
+:root:is(.theme-lite, .theme-nezha) .server-detail-backdrop { padding: 16px; align-items: center; overflow: hidden; backdrop-filter: none; }
+:root:is(.theme-lite, .theme-nezha) .server-detail,
+:root:is(.theme-lite, .theme-nezha) .probe-unlock-dialog[open] { height: var(--mini-dialog-height); max-height: var(--mini-dialog-height); display: flex; flex-direction: column; overflow: hidden; }
+:root:is(.theme-lite, .theme-nezha) .server-detail-header,
+:root:is(.theme-lite, .theme-nezha) .probe-unlock-dialog-head { flex-shrink: 0; }
+:root:is(.theme-lite, .theme-nezha) .server-detail-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+:root:is(.theme-lite, .theme-nezha) .probe-unlock-dialog > .probe-unlock-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+:root:is(.theme-lite, .theme-nezha) .probe-unlock-dialog::backdrop { backdrop-filter: none; }
 /* 六个详情标签按最高内容统一高度；只允许整个浮层移动，不产生内部滚动条。 */
-:root.theme-lite .mini-detail-backdrop { align-items: flex-start; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
-:root.theme-lite .mini-detail-backdrop::-webkit-scrollbar { display: none; }
-:root.theme-lite .mini-detail-dialog { width: min(940px, 100%); height: auto; min-height: var(--mini-dialog-height); max-height: none; flex-shrink: 0; overflow: visible; margin: 0 auto; border-radius: 20px; background: var(--mini-surface); }
+:root:is(.theme-lite, .theme-nezha) .mini-detail-backdrop { align-items: flex-start; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+:root:is(.theme-lite, .theme-nezha) .mini-detail-backdrop::-webkit-scrollbar { display: none; }
+:root:is(.theme-lite, .theme-nezha) .mini-detail-dialog { width: min(940px, 100%); height: auto; min-height: var(--mini-dialog-height); max-height: none; flex-shrink: 0; overflow: visible; margin: 0 auto; border-radius: 20px; background: var(--mini-surface); }
 .mini-detail-header { flex-shrink: 0; padding: 22px 24px 14px; }
 .mini-detail-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .mini-detail-heading h2 { margin: 0; flex: 1; min-width: 0; font-size: 23px; line-height: 1.4; color: var(--mini-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

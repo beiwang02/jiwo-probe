@@ -1,4 +1,4 @@
-export type ThemeName = 'pixel' | 'flat' | 'anime' | 'glass' | 'lumina' | 'premium' | 'ran' | 'glassmorphism' | 'emerald' | 'lite' | 'luminaplus'
+export type ThemeName = 'pixel' | 'flat' | 'anime' | 'glass' | 'lumina' | 'premium' | 'ran' | 'glassmorphism' | 'emerald' | 'lite' | 'luminaplus' | 'nezha'
 
 export interface ProbeBackgroundAppearance {
   url: string

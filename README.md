@@ -19,6 +19,8 @@
 | [<img src="docs/screenshots/lumina.png" alt="Lumina" width="100%">](docs/screenshots/lumina.png) | [<img src="docs/screenshots/glassmorphism.png" alt="Glassmorphism" width="100%">](docs/screenshots/glassmorphism.png) |
 | **Emerald** | **岚 · Ran** |
 | [<img src="docs/screenshots/emerald.png" alt="Emerald" width="100%">](docs/screenshots/emerald.png) | [<img src="docs/screenshots/ran.png" alt="Ran" width="100%">](docs/screenshots/ran.png) |
+| **哪吒 · 浅色** | **哪吒 · 深色** |
+| [<img src="docs/screenshots/nezha-light.png" alt="哪吒浅色" width="100%">](docs/screenshots/nezha-light.png) | [<img src="docs/screenshots/nezha-dark.png" alt="哪吒深色" width="100%">](docs/screenshots/nezha-dark.png) |
 | **经典 · 扁平（浅色）** | **手机端 · LuminaPlus Paper** |
 | [<img src="docs/screenshots/flat.png" alt="经典扁平主题" width="100%">](docs/screenshots/flat.png) | <p align="center"><a href="docs/screenshots/mobile-luminaplus.png"><img src="docs/screenshots/mobile-luminaplus.png" alt="手机端 LuminaPlus Paper" width="220"></a></p> |
 
@@ -111,6 +113,16 @@ Lumina 的普通浅色／暗色使用 Claude Paper 纸面布局与莫兰迪配�
 - 卡片始终保留电信／联通／移动三格回程，缺失线路保持 Unknown；三组延迟、四类解锁／金色全解锁、TCP/UDP 图标与历史、全局速度单位、每 TB 费用继续使用 Jiwo 现有实现；卡片续费单价优先显示主控换算后的人民币，外币服务器在后面附原币种价格，没有换算时显示原币种。没有 V4/V6 状态或自定义套餐标签时不伪造，硬件标签仅使用真实配置。
 - `v0.3.7` 增加独立 Paper 配色开关；保留 `v0.3.6` 周期流量排行榜与实时速度排行榜。许可证仍放在整页内容最下方（与 Premium 一致，不悬浮遮挡卡片）；旁边的动画开关默认开启，浏览器独立记忆 `jiwo-luminaplus-license-anim`，关闭后停止动画并完整显示静态铭牌，保留原有许可证内容和样式。手机许可证单行横滑，开关独立占位；其他主题的位置与动画设置不变。样式版本与日期标记在 [luminaplus.css](src/luminaplus/luminaplus.css) 顶部。
 
+### 哪吒（独立主题）
+
+照哪吒监控 V1 默认前台 [nezha-dash-v1](https://github.com/hamster1963/nezha-dash-v1)（Apache-2.0）的页面结构与配色，用 Jiwo 自己的组件和主控快照数据重写，不打包对方的源码、插画、图标或字体；来源说明见 [`src/nezha/NOTICE.md`](src/nezha/NOTICE.md)。
+
+- 从右上角主题菜单选择 **哪吒**；主控主题名填 `nezha` 跟随系统明暗，`nezha-light` / `nezha-dark` 固定浅色或深色。页头的太阳／月亮按钮在 浅色 → 深色 → 自动 之间切换（自动：主控写了明暗后缀就跟随主控，否则跟随系统），访客选择优先。
+- 页面布局：页头（站点名、说明、Passkey 登录、主题选择、明暗、在线台数），「👋 概览」与当前时间，四张概览卡（总服务器、在线、离线、网络：本期上下行合计与实时网速），点在线 / 离线卡片筛选。
+- 控件行：地区分布（主控同款地球）、转发链、列表视图三个圆形开关，按地区分组的标签（哪吒的服务器分组在主控里没有对应，这里按地区分），搜索框，以及哪吒同款排序（默认、名称、在线时间、系统、CPU、内存、存储、上传、下载、上传总量、下载总量，可切换升降序）。开关、排序记在本浏览器。
+- 服务器卡片：在线点、国旗、名称，名字下面是价格、剩余天数与剩余比例条；CPU／内存／存储百分比与 3px 占用条（超过 70% 橙、超过 90% 红），上传／下载网速（跟随 `PROBE_NETWORK_SPEED_UNIT`），本期上传／下载流量，以及流量额度（绿）与三网回程（蓝）两种标签。离线卡片只留名称与计费信息。列表视图一行一台，多出系统、在线时间、上传／下载总量几列，放不下时横向滚动。
+- 点卡片打开与 Lite / LuminaPlus 相同的六标签详情页，配色跟随哪吒主题。默认自定义背景名单不含哪吒，需要时在 `PROBE_BACKGROUND_THEMES` 中加入 `nezha`。
+
 ### Lite（独立主题）
 
 借鉴 [tz.8787.de](https://tz.8787.de/) 的紧凑信息布局，使用 Jiwo 自己的数据接口和组件实现，不复制站点数据或品牌素材，也不替换已有主题。
@@ -168,6 +180,7 @@ Lumina 的普通浅色／暗色使用 Claude Paper 纸面布局与莫兰迪配�
 | `glassmorphism-dark` | Glassmorphism · 黑色模式（深蓝黑玻璃） |
 | `emerald` | Emerald 整页主题 |
 | `lite` / `lite-light` / `lite-dark` | Lite 自动明暗 / 固定浅色 / 固定深色 |
+| `nezha` / `nezha-light` / `nezha-dark` | 哪吒 跟随系统明暗 / 固定浅色 / 固定深色 |
 | `luminaplus` / `luminaplus-light` / `luminaplus-dark` | LuminaPlus 自动明暗 / 固定浅色 / 固定深色 |
 | `luminaplus-paper` | LuminaPlus 内的 Paper 陶纸暖纸配色（固定，不随时间变暗） |
 | 其他自定义名 | 经典界面 + `theme-{name}` 类（站长自写 CSS 接管） |
@@ -356,7 +369,7 @@ ProbeHub 连接或快照异常时会自动回退到原来的主控直连，不�
 - Node.js 22 或更高版本、npm 10 或更高版本
 - 主控具有可由 Cloudflare 访问的 HTTPS 地址
 
-九套主题的页首均提供 Passkey 登录入口，按钮、键盘焦点和错误提示随当前主题配色；Glassmorphism、Emerald 和 Ran（含各配色变体）使用各自的原生按钮样式。如需从外置探针使用 Passkey 登录，先在主控注册 Passkey，并在主控的 `MMWX_WEBAUTHN_RELATED_ORIGINS` 中加入探针完整来源（例如 `https://tz.example.com`）。探针只提供登录入口，不提供 Passkey 注册。
+十套主题的页首均提供 Passkey 登录入口，按钮、键盘焦点和错误提示随当前主题配色；Glassmorphism、Emerald 和 Ran（含各配色变体）使用各自的原生按钮样式。如需从外置探针使用 Passkey 登录，先在主控注册 Passkey，并在主控的 `MMWX_WEBAUTHN_RELATED_ORIGINS` 中加入探针完整来源（例如 `https://tz.example.com`）。探针只提供登录入口，不提供 Passkey 注册。
 
 先进入主控的"系统设置 → 探针"，启用探针、选择展示服务器和指标，然后生成"独立探针访问密钥"。密钥明文只显示一次，请立即保存，切勿提交到 Git。
 

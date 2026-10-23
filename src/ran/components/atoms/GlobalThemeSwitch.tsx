@@ -22,6 +22,7 @@ const GLOBAL_THEMES = [
   { value: 'glassmorphism', label: 'Glassmorphism' },
   { value: 'emerald', label: 'Emerald' },
   { value: 'lite', label: 'Lite' },
+  { value: 'nezha', label: '哪吒' },
 ] as const
 
 function activeBase(): string {
