@@ -4,7 +4,7 @@ import { ConnectionCounts, UnlockButton } from './ServerCapabilities'
 import { ConnectionHistory } from './ConnectionHistory'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Activity, LockOpen, ArrowDown, ArrowDownUp, ArrowUp, BadgeDollarSign, Cable, Calendar, CalendarClock, ChevronDown, CircleDollarSign, Clock, Cpu, Crown, Database, Gauge, Gem, Globe2, HardDrive, LayoutGrid, List, MapPin, MemoryStick, Moon, Network, PieChart, RefreshCw, Rows3, Rows4, Search, Server, Sun, SunMoon, TrendingUp, TriangleAlert, Trophy, Wallet, Wifi } from 'lucide-react'
+import { Activity, LockOpen, ArrowDown, ArrowDownUp, ArrowUp, BadgeDollarSign, Cable, ChartColumn, Calendar, CalendarClock, ChevronDown, CircleDollarSign, Clock, Cpu, Crown, Database, Gauge, Gem, Globe2, HardDrive, LayoutGrid, List, MapPin, MemoryStick, Moon, Network, PieChart, RefreshCw, Rows3, Rows4, Search, Server, Sun, SunMoon, TrendingUp, TriangleAlert, Trophy, Wallet, Wifi } from 'lucide-react'
 import type { ProbePingSeries, ProbeServer, ThemeName } from './types'
 import { EnrichedServer, getActiveTheme, getDarkOverride, getThemeOverride, setDarkOverride, setTheme, useProbe } from './use-probe'
 import { Twemoji } from './Twemoji'
@@ -22,9 +22,10 @@ import { Meter, systemTitle, SystemIcon, routeCarrierLabels, goldRoutes, display
 import { LUMINA_QUOTA_SEGMENTS } from './components/LuminaHealthBars'
 import { ProbeLicenseBar } from './components/ProbeLicenseBar'
 import { regionGroupLabel } from './globe-regions'
-import { PROBE_ALERT_PCT, PROBE_SORT_KEYS, PROBE_SORT_LABELS, averageLoad, formatCapacity, formatSize, probeHealthIssue, relativeTime, sortProbeServers, todayTrafficTotal, type ProbeHealthIssue, type ProbeSortKey } from './probe-overview'
+import { PROBE_ALERT_PCT, PROBE_SORT_KEYS, PROBE_SORT_LABELS, connectionTotals, dailyTrafficTotals, formatCapacity, formatSize, meterTone, networkQuality, probeHealthIssue, quotaSummary, relativeTime, sortProbeServers, type ProbeHealthIssue, type ProbeSortKey } from './probe-overview'
 
-const RegionGlobe = lazy(() => import('./RegionGlobe').then((module) => ({ default: module.RegionGlobe })))
+// 与主控内置探针同款的地区地球（拱形弧线 + 亮点旁旗帜与台数）
+const RegionGlobe = lazy(() => import('./ProbeRegionGlobe').then((module) => ({ default: module.ProbeRegionGlobe })))
 const PremiumProbePage = lazy(() => import('./PremiumProbePage').then((module) => ({ default: module.PremiumProbePage })))
 const GmApp = lazy(() => import('./glassmorphism/GmApp').then((module) => ({ default: module.default })))
 const EmeraldApp = lazy(() => import('./emerald/EmeraldApp').then((module) => ({ default: module.default })))
@@ -1315,14 +1316,50 @@ function writePref(key: string, value: string) {
   try { localStorage.setItem(key, value) } catch { /* 隐私模式下不记忆 */ }
 }
 
-// 顶部指标格：可点击的就是一个筛选入口
-function Kpi({ label, value, hint, tone, onClick, active }: { label: string; value: ReactNode; hint?: ReactNode; tone?: string; onClick?: () => void; active?: boolean }) {
+// 顶部指标格（照主控内置探针页）：图标 + 标题、大数字、说明，底部一条小图；可点击的就是一个筛选入口
+function Kpi({ icon, label, value, sub, foot, wide, onClick, active, title }: { icon: ReactNode; label: string; value: ReactNode; sub?: ReactNode; foot?: ReactNode; wide?: boolean; onClick?: () => void; active?: boolean; title?: string }) {
+  const className = ['kpi', wide ? 'wide' : '', active ? 'active' : ''].filter(Boolean).join(' ')
   const body = <>
-    <span>{label}</span>
-    <strong className={tone}>{value}</strong>
-    {hint && <small>{hint}</small>}
+    <span className="kpi-label">{icon}{label}</span>
+    <strong className="kpi-value">{value}</strong>
+    {sub && <small className="kpi-sub">{sub}</small>}
+    {foot && <div className="kpi-foot">{foot}</div>}
   </>
-  return onClick ? <button type="button" className={active ? 'kpi active' : 'kpi'} aria-pressed={active} onClick={onClick}>{body}</button> : <div className="kpi">{body}</div>
+  return onClick ? <button type="button" className={className} aria-pressed={active} onClick={onClick} title={title}>{body}</button> : <div className={className} title={title}>{body}</div>
+}
+
+// 指标格底部的小面积图：多条序列共用纵轴，null 断开
+function KpiSpark({ series, height }: { series: Array<{ values: Array<number | null>; tone: string }>; height: number }) {
+  const max = Math.max(1, ...series.flatMap((item) => item.values.filter((v): v is number => typeof v === 'number')))
+  const width = 100
+  return (
+    <svg className="kpi-spark" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ height }} aria-hidden="true">
+      {series.map((item, index) => {
+        const n = item.values.length
+        if (n < 2) return null
+        const points = item.values.map((v, i) => typeof v === 'number' ? [(i / (n - 1)) * width, height - 2 - (v / max) * (height - 4)] as const : null)
+        const valid = points.filter((p): p is readonly [number, number] => !!p)
+        if (valid.length < 2) return null
+        const line = valid.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('')
+        const area = `${line}L${valid[valid.length - 1][0].toFixed(1)} ${height}L${valid[0][0].toFixed(1)} ${height}Z`
+        return <g key={index} className={item.tone}><path className="kpi-spark-area" d={area} /><path className="kpi-spark-line" d={line} /></g>
+      })}
+    </svg>
+  )
+}
+
+// 本页打开后的全站网速采样（随快照刷新），留最近 3 分钟，用来画实时网速曲线和峰值
+const SPEED_WINDOW_MS = 3 * 60 * 1000
+function useSpeedHistory(servers: ProbeServer[] | undefined) {
+  const [samples, setSamples] = useState<Array<{ t: number; up: number; down: number }>>([])
+  useEffect(() => {
+    if (!servers?.length) return
+    const now = Date.now()
+    const up = servers.reduce((sum, server) => sum + (server.upload_speed || 0), 0)
+    const down = servers.reduce((sum, server) => sum + (server.download_speed || 0), 0)
+    setSamples((prev) => [...prev.filter((item) => now - item.t <= SPEED_WINDOW_MS), { t: now, up, down }])
+  }, [servers])
+  return samples
 }
 
 export function App() {
@@ -1339,6 +1376,7 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
   const [view, setView] = useState<'card' | 'list' | 'mini'>(() => (localStorage.getItem('probe-view') as 'card' | 'list' | 'mini') || 'card')
   const [miniExpanded, setMiniExpanded] = useState<boolean>(() => localStorage.getItem('probe-mini-expanded') === '1')
   const [filter, setFilter] = useState<ProbeFilter>('all')
+  const speedSamples = useSpeedHistory(data?.servers)
   const [sortKey, setSortKeyState] = useState<ProbeSortKey>(() => readPref('probe-sort', PROBE_SORT_KEYS, 'default'))
   const [groupBy, setGroupByState] = useState<ProbeGroupBy>(() => readPref('probe-group', ['none', 'region'] as const, 'none'))
   const [density, setDensityState] = useState<ProbeDensity>(() => readPref('probe-density', ['standard', 'dense'] as const, 'standard'))
@@ -1517,30 +1555,103 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
   const hasSpeed = servers.some((server) => server.upload_speed !== undefined || server.download_speed !== undefined)
   const totalUpload = servers.reduce((sum, server) => sum + (server.upload_speed || 0), 0)
   const totalDownload = servers.reduce((sum, server) => sum + (server.download_speed || 0), 0)
-  const todayTraffic = todayTrafficTotal(servers)
-  const avgLoad = averageLoad(servers)
   const globeRegions = servers.map((server) => server.region_country || server.region || '').filter(Boolean)
   const showGlobe = !!data.show_globe && globeRegions.length > 0
   const regionCount = new Set(globeRegions.map((value) => value.trim().toUpperCase())).size
   const assets = assetStats(servers)
+  const connections = connectionTotals(servers)
+  const dailyTotals = dailyTrafficTotals(servers, 7)
+  const todayTraffic = dailyTotals.at(-1)?.total
+  const weekTraffic = dailyTotals.reduce((sum, day) => sum + day.total, 0)
+  const quota = quotaSummary(servers)
+  const quality = networkQuality(servers)
+  const monthlyTotal = servers.reduce((sum, server) => { const cost = monthlyCost(server); return cost > 0 && !isPermanent(server) ? sum + cost : sum }, 0)
+  const nearest = servers
+    .map((server) => ({ server, at: expiryTimestamp(server) }))
+    .filter((item): item is { server: ProbeServer; at: number } => item.at !== undefined && item.at >= Date.now())
+    .sort((a, b) => a.at - b.at)[0]
+  const peakDown = Math.max(0, ...speedSamples.map((item) => item.down))
+  const peakUp = Math.max(0, ...speedSamples.map((item) => item.up))
+  const pctBar = (parts: Array<{ value: number; tone: string }>) => {
+    const total = parts.reduce((sum, part) => sum + part.value, 0)
+    return <div className="kpi-bar">{total > 0 && parts.map((part) => part.value > 0 && <i key={part.tone} className={part.tone} style={{ width: `${(part.value / total) * 100}%` }} />)}</div>
+  }
   const kpis = [
-    <Kpi key="total" label="总节点" value={servers.length} hint="点击查看全部" active={filter === 'all'} onClick={() => selectFilter('all')} />,
-    <Kpi key="online" label="在线" value={onlineCount} tone="online" hint={<>离线 <b className={offlineCount > 0 ? 'offline' : ''}>{offlineCount}</b></>} active={filter === 'online' || filter === 'offline'} onClick={() => selectFilter(offlineCount > 0 ? 'offline' : 'online')} />,
-    hasSpeed && <Kpi key="speed" label="总下行 / 上行" value={<span className="down">↓ {networkSpeed(totalDownload)}</span>} hint={<span className="up">↑ {networkSpeed(totalUpload)}</span>} />,
-    todayTraffic !== undefined && <Kpi key="today" label="今日流量" value={bytes(todayTraffic, false)} hint="全部服务器合计" />,
-    (avgLoad.cpu !== undefined || avgLoad.mem !== undefined || avgLoad.disk !== undefined) && (
+    <Kpi
+      key="servers"
+      icon={<Server size={15} />}
+      label="服务器"
+      value={<><em className="online">{onlineCount}</em><span className="kpi-unit">/ {servers.length}</span></>}
+      sub={<>离线 <b className={offlineCount > 0 ? 'offline' : ''}>{offlineCount}</b> · 告警 <b className={alertCount > 0 ? 'offline' : ''}>{alertCount}</b>{regionCount > 0 && ` · ${regionCount} 个地区`}</>}
+      foot={pctBar([{ value: onlineCount, tone: 'ok' }, { value: offlineCount, tone: 'bad' }])}
+      active={filter === 'all'}
+      onClick={() => selectFilter('all')}
+    />,
+    connections && (
       <Kpi
-        key="load"
-        label="平均占用"
-        value={avgLoad.cpu !== undefined ? `CPU ${avgLoad.cpu.toFixed(0)}%` : avgLoad.mem !== undefined ? `内存 ${avgLoad.mem.toFixed(0)}%` : `硬盘 ${avgLoad.disk!.toFixed(0)}%`}
-        hint={[
-          avgLoad.cpu !== undefined && avgLoad.mem !== undefined ? `内存 ${avgLoad.mem.toFixed(0)}%` : '',
-          avgLoad.disk !== undefined && (avgLoad.cpu !== undefined || avgLoad.mem !== undefined) ? `硬盘 ${avgLoad.disk.toFixed(0)}%` : '',
-        ].filter(Boolean).join(' · ') || '在线服务器平均'}
+        key="connections"
+        icon={<Network size={15} />}
+        label="连接数"
+        value={connections.total.toLocaleString('en-US')}
+        sub={`TCP ${connections.tcp.toLocaleString('en-US')} · UDP ${connections.udp.toLocaleString('en-US')}`}
+        foot={connections.history && <KpiSpark series={[{ values: connections.history, tone: 'conn' }]} height={40} />}
       />
     ),
-    assets && <Kpi key="assets" label="剩余价值" value={formatMoney(assets.totalValue, 'CNY', true)} tone="money" hint={`月均 ${formatMoney(assets.totalMonthly, 'CNY', true)} · 覆盖 ${assets.priced} / ${servers.length} 台`} />,
-    hasExpiry && <Kpi key="renewal" label="待续费" value={renewalCount} tone={renewalCount > 0 ? 'warn' : undefined} hint={renewalAmount > 0 ? `合计 ¥${renewalAmount.toFixed(2)}` : '即将到期与已到期'} active={filter === 'renewal'} onClick={() => selectFilter('renewal')} />,
+    hasSpeed && (
+      <Kpi
+        key="speed"
+        wide
+        icon={<Activity size={15} />}
+        label="实时网速"
+        value={<><span className="down">↓ {networkSpeed(totalDownload)}</span><span className="up">↑ {networkSpeed(totalUpload)}</span></>}
+        sub={speedSamples.length > 1 ? `近 3 分钟峰值 ↓ ${networkSpeed(peakDown)} · ↑ ${networkSpeed(peakUp)}` : '全部服务器合计'}
+        foot={speedSamples.length > 1 && <KpiSpark series={[{ values: speedSamples.map((item) => item.down), tone: 'down' }, { values: speedSamples.map((item) => item.up), tone: 'up' }]} height={44} />}
+      />
+    ),
+    todayTraffic !== undefined && (
+      <Kpi
+        key="today"
+        icon={<ChartColumn size={15} />}
+        label="今日流量"
+        value={bytes(todayTraffic, false)}
+        sub={`近 ${dailyTotals.length} 天 ${bytes(weekTraffic, false)}`}
+        foot={<div className="kpi-columns" title={dailyTotals.map((day) => `${day.date.slice(5)} ${bytes(day.total, false)}`).join('\n')}>{dailyTotals.map((day, index) => <i key={day.date} className={index === dailyTotals.length - 1 ? 'today' : undefined} style={{ height: `${Math.max(4, (day.total / Math.max(1, ...dailyTotals.map((d) => d.total))) * 100)}%` }} />)}</div>}
+      />
+    ),
+    quota && (
+      <Kpi
+        key="quota"
+        icon={<Gauge size={15} />}
+        label="本期流量额度"
+        value={`${quota.pct.toFixed(0)}%`}
+        sub={`${bytes(quota.used, false)} / ${bytes(quota.limit, false)}${quota.over80 ? ` · ${quota.over80} 台超 80%` : ''}`}
+        foot={<div className="kpi-bar"><i className={meterTone(quota.pct) ?? 'quota'} style={{ width: `${Math.min(100, quota.pct)}%` }} /></div>}
+      />
+    ),
+    quality && (
+      <Kpi
+        key="quality"
+        icon={<Wifi size={15} />}
+        label="网络质量"
+        value={<>{quality.latency.toFixed(0)}<span className="kpi-unit">ms</span></>}
+        sub={`${quality.loss !== undefined ? `丢包 ${quality.loss.toFixed(1)}% · ` : ''}优 ${quality.good} · 中 ${quality.medium} · 差 ${quality.poor}`}
+        foot={pctBar([{ value: quality.good, tone: 'ok' }, { value: quality.medium, tone: 'warn' }, { value: quality.poor, tone: 'bad' }])}
+        title="在线服务器各延迟目标的平均；丢包 ≥10% 或延迟 ≥250ms 为差，丢包 ≥3% 或延迟 ≥120ms 为中"
+      />
+    ),
+    hasExpiry && (
+      <Kpi
+        key="renewal"
+        icon={<Wallet size={15} />}
+        label="续费"
+        value={<><em className={renewalCount > 0 ? 'warn' : undefined}>{renewalCount}</em><span className="kpi-unit">台待续费</span></>}
+        sub={`30 天内 ¥${renewalAmount.toFixed(2)}${monthlyTotal > 0 ? ` · 月均 ¥${monthlyTotal.toFixed(0)}` : ''}`}
+        foot={nearest && <span className="kpi-note">最近到期：{nearest.server.name || '未命名服务器'} · {Math.max(0, Math.ceil((nearest.at - Date.now()) / 86400000))} 天</span>}
+        title={assets ? `剩余价值 ${formatMoney(assets.totalValue, 'CNY', true)} · 覆盖 ${assets.priced} / ${servers.length} 台` : undefined}
+        active={filter === 'renewal'}
+        onClick={() => selectFilter('renewal')}
+      />
+    ),
   ].filter(Boolean)
   const globeBody = (
     <Suspense fallback={<div className="globe-loading">正在加载国界数据…</div>}>

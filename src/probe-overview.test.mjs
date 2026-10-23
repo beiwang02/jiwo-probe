@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { averageLoad, formatCapacity, formatSize, meterTone, probeHealthIssue, relativeTime, sortProbeServers, todayTrafficTotal } from './probe-overview.ts'
+import { connectionTotals, dailyTrafficTotals, formatCapacity, formatSize, meterTone, networkQuality, pingQuality, probeHealthIssue, quotaSummary, relativeTime, sortProbeServers } from './probe-overview.ts'
 
 const GB = 1024 ** 3
 
@@ -26,26 +26,6 @@ test('进度条配色：超过 90% 红，超过 70% 黄', () => {
   assert.equal(meterTone(90), 'warn')
   assert.equal(meterTone(71), 'warn')
   assert.equal(meterTone(70), undefined)
-})
-
-test('今日流量：合计各服务器最新一天的日流量，都没有时返回 undefined', () => {
-  assert.equal(todayTrafficTotal([
-    { online: true, daily_traffic: [{ date: '2026-10-21', total: 5 }, { date: '2026-10-22', total: 7 }] },
-    { online: true, daily_traffic: [{ date: '2026-10-22', total: 3 }] },
-    { online: false },
-  ]), 10)
-  assert.equal(todayTrafficTotal([{ online: true }]), undefined)
-})
-
-test('平均占用：只算在线且上报了该项的服务器', () => {
-  const load = averageLoad([
-    { online: true, cpu_pct: 10, mem_used: 1, mem_total: 4 },
-    { online: true, cpu_pct: 30 },
-    { online: false, cpu_pct: 90 },
-  ])
-  assert.equal(load.cpu, 20)
-  assert.equal(load.mem, 25)
-  assert.equal(load.disk, undefined)
 })
 
 test('排序：没有数据的排最后，相同时保持原顺序', () => {
@@ -76,4 +56,54 @@ test('相对时间：刚刚、分钟、小时、天', () => {
   assert.equal(relativeTime('2026-10-22T01:48:40Z', now), '刚刚')
   assert.equal(relativeTime('2026-10-20T01:00:00Z', now), '2 天前')
   assert.equal(relativeTime('坏数据', now), '')
+})
+
+test('近 7 天日流量：按日期合计各服务器，只留最近的天数', () => {
+  const servers = [
+    { online: true, daily_traffic: [{ date: '2026-10-20', total: 1 }, { date: '2026-10-21', total: 2 }, { date: '2026-10-22', total: 3 }] },
+    { online: true, daily_traffic: [{ date: '2026-10-22', total: 4 }] },
+    { online: true, daily_traffic_estimated: true, daily_traffic: [{ date: '2026-10-22', total: 100 }] },
+  ]
+  // 估算日流量的机器不计入（与主控探针页一致）
+  assert.deepEqual(dailyTrafficTotals(servers, 2), [{ date: '2026-10-21', total: 2 }, { date: '2026-10-22', total: 7 }])
+  assert.deepEqual(dailyTrafficTotals([{ online: true }]), [])
+})
+
+test('本期流量额度：只算设了限额的服务器，超 80% 单独计数', () => {
+  const q = quotaSummary([
+    { online: true, traffic_used: 90, traffic_limit: 100 },
+    { online: true, traffic_used: 10, traffic_limit: 300 },
+    { online: true, traffic_used: 999 },
+  ])
+  assert.deepEqual(q, { used: 100, limit: 400, pct: 25, count: 2, over80: 1 })
+  assert.equal(quotaSummary([{ online: true, traffic_used: 5 }]), undefined)
+})
+
+test('网络质量：在线服务器取各目标平均，按 Premium 同一口径分优中差', () => {
+  const q = networkQuality([
+    { online: true, ping: [{ current_ms: 30, loss_pct: 0 }, { current_ms: 50, loss_pct: 1 }] },
+    { online: true, ping: [{ current_ms: 130, loss_pct: 0 }] },
+    { online: true, ping: [{ current_ms: 20, loss_pct: 12 }] },
+    { online: true, ping: [{ current_ms: -1, loss_pct: -1 }] },
+    { online: false, ping: [{ current_ms: 999, loss_pct: 50 }] },
+  ])
+  assert.equal(q.total, 3)
+  assert.equal(q.latency, (40 + 130 + 20) / 3)
+  assert.deepEqual([q.good, q.medium, q.poor], [1, 1, 1])
+  assert.equal(pingQuality(100, 2), 'good')
+  // 有分桶时按近 1 小时平均算，而不是当前值
+  const hourly = networkQuality([{ online: true, ping: [{ current_ms: 20, loss_pct: 0, buckets: [{ ms: 100, loss: 0 }, { ms: 160, loss: 6 }, { ms: -1, loss: -1 }] }] }])
+  assert.equal(hourly.latency, 130)
+  assert.equal(hourly.loss, 3)
+  assert.equal(hourly.medium, 1)
+  assert.equal(networkQuality([{ online: true }]), undefined)
+})
+
+test('连接数：合计 TCP / UDP，近 1 小时曲线按时段相加，全缺的时段为 null', () => {
+  const c = connectionTotals([
+    { online: true, tcp_connections: 10, udp_connections: 2, conn_history: { tcp: [1, null, 3], udp: [1, null, null] } },
+    { online: true, tcp_connections: 5, conn_history: { tcp: [2, null, 1], udp: [0, null, 0] } },
+  ])
+  assert.deepEqual(c, { tcp: 15, udp: 2, total: 17, history: [4, null, 4] })
+  assert.equal(connectionTotals([{ online: true }]), undefined)
 })

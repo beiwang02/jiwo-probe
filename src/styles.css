@@ -374,32 +374,30 @@ button {
   width: min(1600px, calc(100% - 48px));
   margin: 18px auto 0;
 }
+/* 4 列两行：服务器、连接数、实时网速（占两格）/ 今日流量、本期额度、网络质量、续费 */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 12px;
 }
-/* 中等宽度放不下一排时固定 4 列，避免 6 + 1 这种落单 */
-@media (min-width: 761px) and (max-width: 1199px) {
-  .kpi-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
 .kpi {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--shadow);
   display: flex;
   min-width: 0;
-  min-height: 76px;
+  min-height: 118px;
   flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  padding: 10px 16px;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
   color: var(--foreground);
+  background: var(--surface);
+  box-shadow: var(--shadow);
   font: inherit;
   text-align: left;
+}
+.kpi.wide {
+  grid-column: span 2;
 }
 button.kpi {
   cursor: pointer;
@@ -408,25 +406,51 @@ button.kpi:hover,
 button.kpi.active {
   border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
 }
-.kpi > span {
+.kpi-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.kpi-label svg {
+  flex-shrink: 0;
+}
+.kpi-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-value em {
+  font-style: normal;
+}
+/* 实时网速一格放下行、上行两个大数字 */
+.kpi.wide .kpi-value {
+  gap: 0 22px;
+}
+.kpi-unit {
+  margin-left: 5px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 500;
+}
+.kpi-sub {
+  overflow: hidden;
   color: var(--muted);
   font-size: 12px;
-}
-.kpi > strong {
-  overflow: hidden;
-  font-size: 20px;
-  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.kpi > small {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
+.kpi-sub b {
+  font-weight: 600;
 }
 .kpi .online,
 .kpi .down {
@@ -441,8 +465,88 @@ button.kpi.active {
 .kpi .warn {
   color: #d97706;
 }
-.kpi .money {
-  color: var(--primary);
+/* 底部小图贴在格子最下面，各格对齐 */
+.kpi-foot {
+  margin-top: auto;
+  padding-top: 8px;
+}
+.kpi-bar {
+  display: flex;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.kpi-bar i {
+  height: 100%;
+  background: var(--primary);
+}
+.kpi-bar i.ok {
+  background: #22c55e;
+}
+.kpi-bar i.warn {
+  background: #eab308;
+}
+.kpi-bar i.bad {
+  background: #ef4444;
+}
+.kpi-bar i.quota {
+  background: var(--primary);
+}
+.kpi-spark {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.kpi-spark-area {
+  stroke: none;
+  opacity: 0.16;
+}
+.kpi-spark-line {
+  fill: none;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.kpi-spark .conn .kpi-spark-area {
+  fill: var(--primary);
+}
+.kpi-spark .conn .kpi-spark-line {
+  stroke: var(--primary);
+}
+.kpi-spark .down .kpi-spark-area {
+  fill: #22c55e;
+}
+.kpi-spark .down .kpi-spark-line {
+  stroke: #16a34a;
+}
+.kpi-spark .up .kpi-spark-area {
+  fill: #f97316;
+}
+.kpi-spark .up .kpi-spark-line {
+  stroke: #ea580c;
+}
+.kpi-columns {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 40px;
+}
+.kpi-columns i {
+  flex: 1;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+}
+.kpi-columns i.today {
+  background: var(--primary);
+}
+.kpi-note {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .filters {
   flex-wrap: wrap;
@@ -2021,23 +2125,59 @@ footer a:hover {
 .globe-card.open .globe-toggle svg:last-child {
   transform: rotate(180deg);
 }
+/* 地球海洋配色：深色页面用深色海洋，Lumina 黑金 / 白金跟随金色体系（玻璃、动漫另有定义） */
+:root.dark:not(.theme-glass) .globe-card {
+  --globe-ocean-light: #1e293b;
+  --globe-ocean-dark: #0b1220;
+}
+:root.theme-lumina.gold .globe-card {
+  --globe-ocean-light: #2b2922;
+  --globe-ocean-dark: #0b0b09;
+}
+:root.theme-lumina.platinum .globe-card {
+  --globe-ocean-light: #fbf6ea;
+  --globe-ocean-dark: #ecdfc2;
+}
 .globe-stage {
   position: relative;
   z-index: 1;
   display: grid;
   justify-items: center;
-  align-content: center;
   padding: 0 18px 16px;
 }
 .region-globe {
   width: min(100%, 680px);
-  max-height: 410px;
+  /* viewBox 上下各留了 40 给伸出地球的弧线,高度跟着放宽,地球本身大小不变 */
+  max-height: 496px;
+  --arc-from: #3b82f6;
+  --arc-to: #a855f7;
   touch-action: none;
   cursor: grab;
   user-select: none;
 }
 .region-globe:active {
   cursor: grabbing;
+}
+/* 亮点旁的旗帜 + 数量小标签 */
+.region-labels {
+  pointer-events: none;
+}
+.region-label {
+  fill: color-mix(in srgb, var(--surface) 86%, transparent);
+  stroke: color-mix(in srgb, var(--primary) 55%, transparent);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+.region-label-text {
+  fill: currentColor;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.region-label-leader {
+  stroke: color-mix(in srgb, var(--primary) 60%, transparent);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
 }
 .globe-glow {
   fill: color-mix(in srgb, var(--primary) 30%, transparent);
@@ -2080,21 +2220,33 @@ footer a:hover {
   place-items: center;
   color: var(--muted);
 }
-.laser-segments {
+.globe-arcs {
+  pointer-events: none;
+}
+.arc-glow,
+.arc-core {
   fill: none;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  pointer-events: none;
 }
-.laser-segments.glow {
-  stroke: var(--primary);
-  stroke-width: 6;
-  opacity: 0.42;
+.arc-glow {
+  stroke-width: 5;
+  opacity: 0.55;
 }
-.laser-segments.core {
-  stroke: #fff;
-  stroke-width: 2.2;
-  opacity: 0.95;
+.arc-core {
+  stroke-width: 1.6;
+}
+.arc-from {
+  stop-color: var(--arc-from);
+}
+.arc-to {
+  stop-color: var(--arc-to);
+}
+.arc-packet {
+  fill: #fff;
+}
+.arc-packet-glow {
+  fill: color-mix(in srgb, var(--arc-from) 55%, transparent);
 }
 .region-point {
   fill: #fff;
@@ -2131,7 +2283,6 @@ footer a:hover {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .laser-segments,
   .region-point-halo {
     animation: none;
   }
@@ -2344,18 +2495,25 @@ footer a:hover {
     gap: 8px;
   }
   .kpi {
-    min-height: 68px;
-    padding: 9px 12px;
+    min-height: 104px;
+    padding: 10px 12px;
   }
-  .kpi > strong {
-    font-size: 18px;
+  .kpi-value {
+    font-size: 19px;
+  }
+  .kpi.wide .kpi-value {
+    gap: 0 14px;
+  }
+  /* 两列太窄，说明文字换行而不是截断 */
+  .kpi-sub,
+  .kpi-note {
+    white-space: normal;
+  }
+  .kpi-unit {
+    font-size: 13px;
   }
   .toolbar-end {
     margin-left: 0;
-  }
-  /* 两列时最后落单的一格占满一行 */
-  .kpi-grid > .kpi:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
   }
   .filters .server-search {
     flex-basis: 100%;

@@ -14,8 +14,14 @@ export type ProbeOverviewServer = {
   traffic_limit?: number
   expires_at?: string
   renewal_price_cny?: number
+  traffic_used?: number
+  tcp_connections?: number
+  udp_connections?: number
+  conn_history?: { tcp: (number | null)[]; udp: (number | null)[] }
   daily_traffic?: Array<{ date: string; total: number }>
-  ping?: Array<{ current_ms: number }>
+  /** 日流量由累计值估算（xray 来源）：主控探针页的日流量合计不算这些机器 */
+  daily_traffic_estimated?: boolean
+  ping?: Array<{ current_ms: number; loss_pct?: number; buckets?: Array<{ ms: number; loss: number }> }>
 }
 
 /** 进度条变红的阈值，告警也按它 */
@@ -74,29 +80,6 @@ export function formatSize(total: number): string {
   return formatCapacity(0, total).replace(/^0 \/ /, '')
 }
 
-/**
- * 今日流量：所有服务器 daily_traffic 里「最新的那一天」的合计。
- * 没有任何一台带日流量（流量展示关着）→ undefined，调用方不显示这一格。
- */
-export function todayTrafficTotal(servers: ProbeOverviewServer[]): number | undefined {
-  let latest = ''
-  for (const s of servers) for (const d of s.daily_traffic ?? []) if (d.date > latest) latest = d.date
-  if (!latest) return undefined
-  let total = 0
-  for (const s of servers) for (const d of s.daily_traffic ?? []) if (d.date === latest) total += d.total || 0
-  return total
-}
-
-/** 在线服务器的平均占用；某项没有任何数据 → undefined */
-export function averageLoad(servers: ProbeOverviewServer[]) {
-  const avg = (values: Array<number | undefined>) => {
-    const list = values.filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
-    return list.length ? list.reduce((a, b) => a + b, 0) / list.length : undefined
-  }
-  const online = servers.filter((s) => s.online)
-  return { cpu: avg(online.map((s) => s.cpu_pct)), mem: avg(online.map(memPct)), disk: avg(online.map(diskPct)) }
-}
-
 export type ProbeSortKey = 'default' | 'name' | 'cpu' | 'mem' | 'speed' | 'traffic' | 'expiry' | 'latency'
 
 export const PROBE_SORT_KEYS: ProbeSortKey[] = ['default', 'name', 'cpu', 'mem', 'speed', 'traffic', 'expiry', 'latency']
@@ -153,4 +136,98 @@ export function relativeTime(iso: string, now = Date.now()): string {
   const hour = Math.round(sec / 3600)
   if (hour < 48) return `${hour} 小时前`
   return `${Math.round(sec / 86400)} 天前`
+}
+
+// ===== 顶部指标格（照主控内置探针页） =====
+
+/**
+ * 各服务器日流量按日期合计，取最近 days 天（旧到新）；没有日流量时为空。
+ * 与主控内置探针页一致：日流量是按累计值估算出来的机器（daily_traffic_estimated）不计入。
+ */
+export function dailyTrafficTotals(servers: ProbeOverviewServer[], days = 7): Array<{ date: string; total: number }> {
+  const totals = new Map<string, number>()
+  for (const s of servers) {
+    if (s.daily_traffic_estimated) continue
+    for (const d of s.daily_traffic ?? []) totals.set(d.date, (totals.get(d.date) || 0) + (d.total || 0))
+  }
+  return [...totals].sort(([a], [b]) => a.localeCompare(b)).slice(-days).map(([date, total]) => ({ date, total }))
+}
+
+/** 本期流量额度：只算设了限额的服务器；超 80% 的台数单独数出来 */
+export function quotaSummary(servers: ProbeOverviewServer[]) {
+  let used = 0
+  let limit = 0
+  let count = 0
+  let over80 = 0
+  for (const s of servers) {
+    if (!(typeof s.traffic_limit === 'number' && s.traffic_limit > 0)) continue
+    const u = typeof s.traffic_used === 'number' && s.traffic_used > 0 ? s.traffic_used : 0
+    count++
+    used += u
+    limit += s.traffic_limit
+    if (u / s.traffic_limit > 0.8) over80++
+  }
+  return count ? { used, limit, pct: (used / limit) * 100, count, over80 } : undefined
+}
+
+/**
+ * 一台服务器的延迟与丢包：各延迟目标近 1 小时分桶的平均（与主控内置探针页的数值对得上）；
+ * 没有分桶时退回当前值。失败的 -1 不算。
+ */
+export function serverPing(s: ProbeOverviewServer): { latency?: number; loss?: number } {
+  const buckets = (s.ping ?? []).flatMap((p) => p.buckets ?? [])
+  const valid = (values: Array<number | undefined>) => values.filter((v): v is number => typeof v === 'number' && v >= 0)
+  const bucketMs = valid(buckets.map((b) => b.ms))
+  const ms = bucketMs.length ? bucketMs : valid((s.ping ?? []).map((p) => p.current_ms))
+  const bucketLoss = valid(buckets.map((b) => b.loss))
+  const loss = bucketLoss.length ? bucketLoss : valid((s.ping ?? []).map((p) => p.loss_pct))
+  return {
+    latency: ms.length ? ms.reduce((a, b) => a + b, 0) / ms.length : undefined,
+    loss: loss.length ? loss.reduce((a, b) => a + b, 0) / loss.length : undefined,
+  }
+}
+
+/** 网络质量分级，与 Premium 网络视图同一口径：丢包 ≥10% 或延迟 ≥250ms 为差，丢包 ≥3% 或延迟 ≥120ms 为中 */
+export function pingQuality(latency: number, loss: number): 'good' | 'medium' | 'poor' {
+  if (loss >= 10 || latency >= 250) return 'poor'
+  if (loss >= 3 || latency >= 120) return 'medium'
+  return 'good'
+}
+
+/** 在线且有延迟数据的服务器：平均延迟、平均丢包与优 / 中 / 差台数 */
+export function networkQuality(servers: ProbeOverviewServer[]) {
+  const rows = servers.filter((s) => s.online).map(serverPing).filter((row): row is { latency: number; loss?: number } => row.latency !== undefined)
+  if (!rows.length) return undefined
+  const counts = { good: 0, medium: 0, poor: 0 }
+  for (const row of rows) counts[pingQuality(row.latency, row.loss ?? 0)]++
+  const losses = rows.map((row) => row.loss).filter((v): v is number => v !== undefined)
+  return {
+    latency: rows.reduce((sum, row) => sum + row.latency, 0) / rows.length,
+    loss: losses.length ? losses.reduce((a, b) => a + b, 0) / losses.length : undefined,
+    ...counts,
+    total: rows.length,
+  }
+}
+
+/** 全部服务器的 TCP / UDP 连接数合计，以及近 1 小时的合计曲线（各台同一时段相加，全缺的时段为 null） */
+export function connectionTotals(servers: ProbeOverviewServer[]) {
+  let tcp = 0
+  let udp = 0
+  let reported = false
+  let length = 0
+  for (const s of servers) {
+    if (typeof s.tcp_connections === 'number') { tcp += s.tcp_connections; reported = true }
+    if (typeof s.udp_connections === 'number') { udp += s.udp_connections; reported = true }
+    if (s.conn_history) length = Math.max(length, s.conn_history.tcp.length, s.conn_history.udp.length)
+  }
+  if (!reported) return undefined
+  const history = length ? Array.from({ length }, (_, i) => {
+    let sum = 0
+    let any = false
+    for (const s of servers) {
+      for (const v of [s.conn_history?.tcp[i], s.conn_history?.udp[i]]) if (typeof v === 'number') { sum += v; any = true }
+    }
+    return any ? sum : null
+  }) : undefined
+  return { tcp, udp, total: tcp + udp, history }
 }
