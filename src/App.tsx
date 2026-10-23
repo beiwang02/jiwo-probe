@@ -21,7 +21,7 @@ import { ForwardOverview, prefetchDeferred, ServerDetail, SystemTrendChart, Traf
 import { Meter, systemTitle, SystemIcon, routeCarrierLabels, goldRoutes, displayReturnRoute, ReturnRouteBadges } from './components/ServerVisuals'
 import { LUMINA_QUOTA_SEGMENTS } from './components/LuminaHealthBars'
 import { ProbeLicenseBar } from './components/ProbeLicenseBar'
-import { regionGroupLabel } from './globe-regions'
+import { globeCountryCode, regionGroupLabel } from './globe-regions'
 import { PROBE_ALERT_PCT, PROBE_SORT_KEYS, PROBE_SORT_LABELS, connectionTotals, dailyTrafficTotals, formatCapacity, formatSize, meterTone, networkQuality, probeHealthIssue, quotaSummary, relativeTime, sortProbeServers, type ProbeHealthIssue, type ProbeSortKey } from './probe-overview'
 
 // 与主控内置探针同款的地区地球（拱形弧线 + 亮点旁旗帜与台数）
@@ -1557,7 +1557,8 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
   const totalDownload = servers.reduce((sum, server) => sum + (server.download_speed || 0), 0)
   const globeRegions = servers.map((server) => server.region_country || server.region || '').filter(Boolean)
   const showGlobe = !!data.show_globe && globeRegions.length > 0
-  const regionCount = new Set(globeRegions.map((value) => value.trim().toUpperCase())).size
+  // 旗帜、国家代码两种写法按国家代码去重（同一地区有的机器只报旗帜）
+  const regionCount = new Set(globeRegions.map((value) => globeCountryCode(value) || value.trim().toUpperCase())).size
   const assets = assetStats(servers)
   const connections = connectionTotals(servers)
   const dailyTotals = dailyTrafficTotals(servers, 7)
