@@ -3,6 +3,12 @@ import type { PremiumProbeRegion } from './BlackGoldGlobe'
 
 const names = new Map(FLAG_OPTIONS.map(({ code, label }) => [code, label]))
 
+/** 地区分组标题：主控的地区可能是旗帜、国家代码或「HK · 香港」这类写法，统一成「旗帜 中文名」；认不出时原样显示 */
+export function regionGroupLabel(region: string): string {
+  const code = globeCountryCode(region)
+  return code ? `${countryCodeToFlag(code)} ${names.get(code) || code}` : region
+}
+
 export function globeCountryCode(region: string): string {
   const raw = region.trim()
   const points = [...raw].map(char => char.codePointAt(0) || 0)

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { buildGlobeRegions, globeCountryCode } from './globe-regions.ts'
+import { buildGlobeRegions, globeCountryCode, regionGroupLabel } from './globe-regions.ts'
 import { CITY_REGION_COORDINATES, GLOBE_CENTER, GLOBE_RADIUS, LABEL_MIN_GAP, layoutOrbit, MAX_ORBIT_LABELS } from './orbit-layout.ts'
 
 const region = code => ({ code, label: code, total: 1, online: 1 })
@@ -71,4 +71,11 @@ test('通用和 Glassmorphism 地球复用 Premium 新组件，不再保留旧�
   const source = readFileSync(new URL('./BlackGoldGlobe.tsx', import.meta.url), 'utf8')
   assert.match(source, /orbitLabels\.current\?\.update\(next\)/)
   assert.match(source, /y=\{boxY\}/)
+})
+
+test('地区分组标题：旗帜、代码、「代码 · 名称」都统一成「旗帜 中文名」，认不出的原样显示', () => {
+  assert.equal(regionGroupLabel('🇭🇰'), '🇭🇰 香港')
+  assert.equal(regionGroupLabel('JP'), '🇯🇵 日本')
+  assert.equal(regionGroupLabel('SG · Singapore'), '🇸🇬 新加坡')
+  assert.equal(regionGroupLabel('火星'), '火星')
 })

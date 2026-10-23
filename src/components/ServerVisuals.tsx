@@ -1,11 +1,13 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Monitor } from 'lucide-react'
 import { siAlmalinux, siAlpinelinux, siApple, siArchlinux, siCentos, siDebian, siFedora, siFreebsd, siGentoo, siKalilinux, siLinux, siLinuxmint, siNixos, siOpensuse, siProxmox, siRedhat, siRockylinux, siUbuntu } from 'simple-icons'
 import type { ProbeReturnRoute, ProbeServer } from '../types'
+import { meterTone } from '../probe-overview'
 
-export function Meter({ icon, label, value, percent }: { icon: React.ReactNode; label: string; value: string; percent: number }) {
+/** 经典卡片的占用条：超过 70% 变黄、超过 90% 变红；sub / subRight 是条下的小字（核心数、已用 / 总量等） */
+export function Meter({ icon, label, value, percent, sub, subRight, title }: { icon: React.ReactNode; label: string; value: string; percent: number; sub?: ReactNode; subRight?: ReactNode; title?: string }) {
   return (
-    <div className="metric">
+    <div className="metric" title={title}>
       <div className="metric-head">
         <span>
           {icon}
@@ -14,8 +16,9 @@ export function Meter({ icon, label, value, percent }: { icon: React.ReactNode; 
         <strong>{value}</strong>
       </div>
       <div className="meter">
-        <i style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} />
+        <i className={meterTone(percent)} style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} />
       </div>
+      {(sub || subRight) && <div className="metric-sub"><span>{sub}</span>{subRight && <span>{subRight}</span>}</div>}
     </div>
   )
 }

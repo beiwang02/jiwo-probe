@@ -39,15 +39,15 @@
   color: var(--foreground); background-color: var(--page-bg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
-:root.theme-lumina:not(.gold):not(.platinum) :is(.topbar h1,.lumina-title,.summary-card h2,.globe-card h2,.leaderboard-card h2,.server-detail-header h2,.probe-unlock-dialog-head h2) {
+:root.theme-lumina:not(.gold):not(.platinum) :is(.topbar h1,.lumina-title,.globe-card h2,.leaderboard-card h2,.server-detail-header h2,.probe-unlock-dialog-head h2) {
   font-family: var(--paper-heading-font);
 }
 /* Replace the former borderless heavy shadows without touching gold variants. */
-:root.theme-lumina:not(.gold):not(.platinum) :is(.server-card,.lumina-card,.summary-card,.probe-toolbar,.globe-card,.leaderboard-card,.server-mini-card) {
+:root.theme-lumina:not(.gold):not(.platinum) :is(.server-card,.lumina-card,.kpi,.probe-toolbar,.globe-card,.leaderboard-card,.server-mini-card) {
   border: 1px solid var(--border) !important;
   box-shadow: var(--lumina-card-shadow) !important;
 }
-:root.theme-lumina:not(.gold):not(.platinum) :is(.server-card,.lumina-card,.summary-card,.probe-toolbar,.globe-card,.leaderboard-card,.server-mini-card):hover {
+:root.theme-lumina:not(.gold):not(.platinum) :is(.server-card,.lumina-card,.kpi,.probe-toolbar,.globe-card,.leaderboard-card,.server-mini-card):hover {
   border-color: var(--border) !important; transform: none;
 }
 :root.theme-lumina:not(.gold):not(.platinum) .lumina-card.is-offline {
@@ -70,8 +70,7 @@
 :root.theme-lumina:not(.gold):not(.platinum) .lumina-traffic-pulse > span[data-active="true"] { opacity: 1 !important; }
 /* Carry the same semantic palette into overview counts and filter controls. */
 :root.theme-lumina:not(.gold):not(.platinum) .status.online { background: var(--status-success); box-shadow: 0 0 0 4px color-mix(in srgb,var(--status-success) 12%,transparent); }
-:root.theme-lumina:not(.gold):not(.platinum) :is(.summary-toggle .summary-toggle-info b.ok,.node-stats .online strong) { color: var(--status-success); }
-:root.theme-lumina:not(.gold):not(.platinum) :is(.summary-toggle .summary-toggle-info b.bad,.node-stats .offline strong) { color: var(--status-error); }
+
 :root.theme-lumina:not(.gold):not(.platinum) .warning { color: var(--status-warning) !important; }
 :root.theme-lumina:not(.gold):not(.platinum) .danger { color: var(--status-error) !important; }
 :root.theme-lumina:not(.gold):not(.platinum) .filters button.active.warning { background: color-mix(in srgb,var(--status-warning) 14%,var(--surface)); border-color: var(--status-warning); color: var(--status-warning) !important; }
