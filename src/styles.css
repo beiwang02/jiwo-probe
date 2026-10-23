@@ -706,6 +706,16 @@ button.kpi.active {
   outline: 1.5px solid rgba(239, 68, 68, 0.7);
   outline-offset: -1px;
 }
+/* 连接数曲线与上下区块对齐，不贴卡片边缘 */
+.server-card > .probe-conn-history {
+  width: calc(100% - 32px);
+  margin-inline: 16px;
+}
+/* 动漫卡片自带内边距，曲线照常铺满 */
+.theme-anime .server-card > .probe-conn-history {
+  width: 100%;
+  margin-inline: 0;
+}
 /* 离线卡片内容少，不跟同排卡片拉到一样高 */
 .server-card.offline {
   align-self: start;
