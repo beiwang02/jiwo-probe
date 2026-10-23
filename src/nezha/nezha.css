@@ -526,7 +526,7 @@
   min-width: 0;
   flex-direction: column;
 }
-.nz-server-name p {
+.nz-server-name > div > p {
   overflow-wrap: anywhere;
   font-size: 12px;
   font-weight: 700;
@@ -812,6 +812,68 @@
   }
   .nz-server .nz-metrics > div {
     min-width: 0;
+  }
+}
+/* 窄屏卡片（一列或中屏两列）：内容整体居中——名字一行，计费信息并排在下面，指标五列铺满并居中 */
+@media (max-width: 1023px) {
+  .nz-server {
+    align-items: stretch;
+    gap: 10px;
+  }
+  .nz-server.is-offline {
+    min-height: 0;
+  }
+  /* 在线点、国旗、名字同一行居中，计费信息另起一行（名字块拆开参与排版） */
+  .nz-server-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px 8px;
+    text-align: center;
+  }
+  .nz-server-name > div {
+    display: contents;
+  }
+  .nz-server-name > div > p {
+    font-size: 13px;
+  }
+  .nz-billing {
+    display: flex;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px 10px;
+  }
+  .nz-billing p {
+    font-size: 11px;
+  }
+  .nz-billing .nz-remain {
+    margin-top: 0;
+  }
+  .nz-server-body {
+    align-items: stretch;
+  }
+  .nz-server .nz-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .nz-server .nz-metrics > div {
+    min-width: 0;
+    align-items: center;
+    text-align: center;
+  }
+  .nz-server .nz-metrics .nz-usage {
+    width: 100%;
+  }
+  .nz-server .nz-metrics strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nz-plan {
+    justify-content: center;
+    margin-top: 0;
   }
 }
 @media (max-width: 640px) {
